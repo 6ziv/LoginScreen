@@ -1,0 +1,7 @@
+x64-windows/
+x64-windows/share/
+x64-windows/share/ragel/
+x64-windows/share/ragel/copyright
+x64-windows/share/ragel/vcpkg_abi_info.txt
+x64-windows/tools/
+x64-windows/tools/ragel.exe

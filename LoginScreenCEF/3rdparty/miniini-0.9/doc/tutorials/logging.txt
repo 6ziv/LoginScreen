@@ -1,0 +1,45 @@
+Logging MiniINI warnings
+
+
+%!preproc: _0 ../html/log_8h.html#a1bbe53908353b9a26169f091cf0a9728
+
+It can be useful for users of your program to see errors in their INI files.
+MiniINI provides warnings about incorrect or suspicious INI file data. It will
+will also emit assertion errors with detailed information if you pass incorrect 
+input to its methods. You can take advantage of this by enabling MiniINI 
+logging.
+
+== Enabling MiniINI logging ==
+
+Logging works **only** with the debug build (**libminiini-dbg**). It also 
+requires you to provide a callback function for MiniINI to call when it has 
+something to log.
+
+=== Providing logging callback ===
+
+First, you have to write the function. It must take a const pointer to const 
+char (C string) and return nothing. MiniINI logging messages don't end with 
+a newline, so in order to write each message to a new line you have to write 
+it yourself.
+
+Example logging callback function:   
+```
+void Log(const char * const log)
+{
+    std::cout << log << std::endl;
+}
+```
+
+To make MiniINI use this function for logging, you have to pass it with the 
+//[INILogCallback _0]// function. You should do this before you load any files,
+otherwise logging won't be used for those files.
+```
+INILogCallback(Log);
+```
+
+You can also change the logging function more than once if you want. That's all 
+for this tutorial.
+
+--------------------------------------------------------------------------------
+
+**%%mtime(Last update: %d-%m-%Y)**

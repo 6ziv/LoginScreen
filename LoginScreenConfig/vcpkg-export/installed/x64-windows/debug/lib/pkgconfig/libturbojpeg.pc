@@ -1,0 +1,10 @@
+prefix=D:/ProgramFiles/vcpkg/packages/libjpeg-turbo_x64-windows/debug
+exec_prefix=D:/ProgramFiles/vcpkg/packages/libjpeg-turbo_x64-windows/debug
+libdir=D:/ProgramFiles/vcpkg/packages/libjpeg-turbo_x64-windows/debug/lib
+includedir=D:/ProgramFiles/vcpkg/packages/libjpeg-turbo_x64-windows/debug/include
+
+Name: libturbojpeg
+Description: A SIMD-accelerated JPEG codec that provides the TurboJPEG API
+Version: 2.0.5
+Libs: -L${libdir} -lturbojpeg
+Cflags: -I${includedir}

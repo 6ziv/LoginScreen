@@ -1,0 +1,274 @@
+0.3.0:
+
+- FEATURES/IMPROVEMENTS:
+
+ - Added custom memory allocator resulting in about 15% speedup and about 45% 
+   decrease of memory usage.
+
+ - Added benchmarking code and multiple scripts related to benchmarking.
+   This is mainly usable for debugging/development and isn't very well
+   documented. These scripts require python and valgrind to work.
+
+ - Added asserts to the code to check for obvious errors in code.
+
+- BUGFIXES: 
+
+ - Fixed a few small bugs.
+
+
+0.4.0:
+
+- FEATURES/IMPROVEMENTS:
+
+ - Implemented sorting of INISection and INIFile data along with binary search
+   resulting in about 20% speedup on average, and much faster reading of large
+   files.
+ 
+ - Bools are now parsed as true if a value starts by t,T,y,Y or 1 and false if 
+   it starts by f,F,n,N or 0. 
+   In the past, bools were parsed as true if value was "true", "yes" or "1" and
+   false if it is "false", "no" or "0".
+ 
+ - Added INISection and INIFile methods taking STL strings and vectors as 
+   arguments. STL support can be disabled by "make no-stl" combined with 
+   a definition of macro INI_NO_STL before including MiniINI header.
+
+ - Added support for loading INIFiles from user provided buffer instead from
+   file directly. This allows the user to load files e.g. from archives.
+
+ - Logging is now disabled by default. User must provide a callback using
+   INILogCallback to enable logging (logging still works only in debug build)
+
+ - Empty ini sections or files are not ignored anymore, although they issue a
+   warning if found. (if logging callback is provided)
+
+ - Improved benchmark and regression tester and updated them according to new
+   functionality.
+
+ - Improved benchmarking scripts: it is now possible to provide an inifile 
+   defining benchmarks and inputs to use, merge data from these benchmarks
+   and compare such merged data from multiple runs.
+
+- BUGFIXES: 
+
+ - Fixed the logging macro bug that made compilation impossible.
+
+ - Fixed various bugs in API documentation.
+
+ - Fixed a bug in example where <iostream> was not included even though it was
+   needed.
+
+ - Fixed a few small bugs.
+
+
+0.5.0:
+
+- FEATURES/IMPROVEMENTS:
+ 
+ - Refactored ini file reading.
+
+ - Refactored array reading.
+
+ - INIFile::LoadBuffer() no longer alters contents of passed buffer.
+
+ - Optimized some code, resulting in about 15% speedup on average, 25% speedup
+   for array reading.
+
+- BUGFIXES:
+ 
+ - Fixed a bug in testgen.py that caused problems with array reading benchmarks.
+
+ - Fixed a few small bugs.
+
+
+0.6.0:
+
+- FEATURES/IMPROVEMENTS:
+ 
+ - The name=value separator is now configurable (stays '=' by default) using
+   the INISetSeparator() function. This also resulted in about 2% slowdown.
+
+ - All tags before the first header are now loaded to the "[DEFAULT]" section
+   (actual section name includes the '[' and ']' to make sure that it won't 
+   conflict with any sections in any ini file.
+
+ - Array reallocation was refactored, resulting in cleaner code and negligible
+   slowdown.
+
+ - Added a test for reading very long tags to tester.
+
+ - INISetComment() and INISetSeparator() now both refuse characters already used
+   in INI files (such as '[') and return success/failure bool.
+
+ - Makefile now uses $DESTDIR to specify where to install.
+
+ - Ascii docs are now generated as xhtml instead of html4.
+
+ - Style of API docs was modified.
+
+- BUGFIXES:
+
+ - Fixed the bug in INIFile::LoadBuffer() that would delete the passed buffer.
+
+ - Many minor bugfixes.
+
+
+0.7.0:
+
+- FEATURES/IMPROVEMENTS:
+
+ - Tags with multiple values now supported, can be read with the new 
+   ReadMultiXXX family of INISection methods. ',' is parsed as a separator 
+   between multiple values. If ReadXXX methods are called on a multi-value tag, 
+   the first value is read.
+
+ - Added an array lookup operator to INISection for fast access to string 
+   values.
+ 
+ - Wrote a set of tutorials describing all features of MiniINI.
+
+ - Removed the STL version of INISection::ArraySize since it was redunant.
+ 
+ - Better warnings
+
+ - Various improvements in the API documentation
+
+ - Modified internal format of ini tag storage to allow for multi value tags.
+
+ - Refactored parsing of arrays of data.
+
+ - Regression tester program now returns -1 if any test fails.
+
+ - Moved to txt2tags instead of asciidoc for tutorials and README.
+ 
+- BUGFIXES:
+
+ - Fixed an allocator bug that caused a segfault when allocating a new block.
+
+ - Many minor bugfixes.
+
+0.7.1
+
+- BUGFIXES:
+
+ - Removed the broken INISection operator [].
+
+0.7.2
+
+- FEATURES/IMPROVEMENTS:
+
+ - To use MiniINI without STL support, macro MINIINI_NO_STL now must be used 
+   instead of INI_NO_STL. Modified tutorial accordingly.
+
+- BUGFIXES:
+
+ - Fixed a memory leak in INISection::ArraySize()
+ 
+ - Fixed conflicts with windows.h and renamed most macros.
+
+ - Fixed a bug in documentation.
+
+0.8.0
+
+- FEATURES/IMPROVEMENTS:
+
+ - Added support for iteration over INISections in an INIFile and tags in an 
+   INISection. Also added a tutorial on iteration.
+
+ - Replaced strtof with a custom ParseFloat function. This leads to about 34% 
+   speedup when reading floats. However, this also removes support scientific
+   notation. Also, only the '.' character can be used as decimal separator now,
+   it doesn't depend on locale anymore.  
+
+ - Replaced strtol with a custom ParseInt function. This leads to about 7% 
+   speedup when reading integers and about 23% speedup when reading arrays.
+   However, this also removes support for hexadecimal and octal integers. Only
+   decimal integers are supported now. There is also no support for thousand
+   separator characters (although, since they're ignored, spaces can be used for
+   that).
+
+ - Integer overflows (reading too large or too small integers from INI) are not
+   treated as errors anymore, a warning is emitted now and the closest possible
+   integer is read (i.e. minimum or maximum integer depending on the overflowing
+   number).
+ 
+ - Added an article on MiniINI data storage to documentation.
+
+ - Moved static INISection methods to a new file, inisectionutil.h .
+
+- BUGFIXES:
+
+ - Fixed a bug in test file generation for multi value tag benchmarks.
+
+ - Fixed a bug in the benchmark app that caused a segfault when called with no
+   command line arguments.
+ 
+ - Fixed a bug where MiniINI would emit a warning when the default section was 
+   empty (i.e. when there were no tags before the first section in an INI file).
+
+0.9.0
+
+- FEATURES/IMPROVEMENTS:
+
+ - Added INISection::GetNameSTL, a C++ string equivalent of INISection::GetName.
+
+ - Added a custom assert macro that emits a MiniINI error with a message.
+
+ - Rewrote tutorials to make them more readable and informative. Added links
+   to API docs to the tutorials.
+
+ - Rewrote the API documentation to make it more readable. 
+
+ - Regression testing code was completely rewritten with a more maintainable
+   system.
+
+ - Removed most of benchmarking functionality from library code and moved it to
+   the benchmark program which was completely rewritten. Removed the (now 
+   redunant) iteration benchmark.
+
+ - Added extra benchmarking functionality, which can be enabled on compile time
+   by defining macro MINIINI_BENCH_EXTRA. This allows high precision measurement
+   of run time, time spent on file I/O, allocation and file processing. This 
+   functionality is Linux-only, but not required for MiniINI to work. The 
+   benchmark program can use this functionality with the --extra option.
+
+ - Added specific benchmark cases for very small INI files that fit to the L1
+   cache and one case with an extremely large INI file.
+
+ - All testing and benchmarking scripts were rewritten in Python 3.1 .
+
+ - Rewrote testutil.py from scratch for more detailed statistics. Also, it's
+   not dependent on MiniINI anymore - it can be used to measure other programs.
+   The --no-summary option was removed, and the default number of runs to 
+   measure run time was doubled to minimize errors.
+ 
+ - Rewrote testgen.py to buffer contents of generated file and write them out in
+   one call - this improves speed.
+
+ - Removed testutil-merge.py, testutil-merge-compare.py and added new scripts
+   testutil-compare.py and testutil-compare-merge.py that allow comparison of
+   more than two benchmarks.
+
+ - Rewrote test.py from scratch, adding support for MINIINI_BENCH_EXTRA and
+   comparing more than two benchmark runs at once. Interface of test.py was
+   also rewritten. Tests to run (like callgrind, memcheck etc.) are now set
+   through the command line instead of benchmark case INI files.
+
+ - Added version-compare.py, a script that can compare multiple MiniINI 
+   packages. Mostly useful for version benchmarks.
+
+ - Added commit.py, a commit script that looks for errors and prevents a commit
+   if any errors are found. It also writes out code statistics of commits to a
+   new file, code-stats.txt .
+
+ - Moved static INIFile methods to a new file, inifileutil.h .
+
+ - Allocator code was refactored.
+
+ - Refactored logging, warning and error functionality.
+
+- BUGFIXES:
+
+ - Fixed a bug that disabled empty file warning completely.
+
+ - Minor bugfixes.

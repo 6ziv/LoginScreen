@@ -1,0 +1,150 @@
+body
+{
+    margin: 0px;
+    padding: 0px;
+	background-attachment: fixed;
+	background-image: url(images/background512.png);
+	background-color: #DCDCDC;
+	background-repeat: no-repeat;
+	background-position: center;
+} 
+
+#header 
+{
+	font-family: "Liberation Sans", Arial, sans-serif;
+	width: 100%;
+    height: 24px;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: #404040;
+	position: fixed;
+	z-index: 4;
+	background-color: #F0F0F0;
+    padding: 1px;
+}
+
+#header h1
+{
+    margin: 0px;
+	font-size: 24px;
+    text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#body
+{
+	width: 768px;
+	margin-left: auto;
+	margin-right: auto;
+	border: 1px solid #404040;
+    padding: 32px 8px 8px 8px;
+	font-family: "Nimbus Sans L", Arial, sans-serif;
+	font-size: 13px;
+	color: #282C28;
+}
+
+#body h2 
+{
+	font-size: 24px;
+	border-bottom: 2px solid #101020;
+	margin-right: 80px;
+	margin-bottom: 8px;
+	margin-top: 4px;
+}
+
+#body h3 
+{
+	font-size: 18px;
+	border-bottom: 1px solid #404050;
+	margin-right: 80px;
+	margin-bottom: 6px;
+	margin-top: 3px;
+    margin-left: 6px;
+}
+
+#body h4 
+{
+	font-size: 14px;
+	border-bottom: 1px solid #707080;
+	margin-right: 80px;
+	margin-bottom: 6px;
+	margin-top: 3px;
+    margin-left: 12px;
+}
+
+#body p 
+{
+    margin: 8px 104px 8px 16px;
+	line-height: 18px;
+}
+
+#body pre 
+{
+    font-family: "Bitstream Vera Sans Mono", "DejaVu Sans Mono", Consolas, 
+                 "Lucida Console", "Courier New", monospace;
+    font-size: 10px;
+	line-height: 14px;
+    color: #000020;
+    margin: 8px 80px 8px 32px;
+    padding: 6px;
+	border: 1px solid #202040;
+	background-color: #D0D0E8;
+	background-image: url(images/background512.png);
+	background-attachment: fixed;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+#tutorials
+{
+    float:left;
+    padding: 4px 8px 4px 48px;
+    width: 320px;
+}
+
+#other
+{
+    float:right;
+    padding: 4px 48px 4px 8px;
+    width: 320px;
+}
+
+#other h2,#tutorials h2 
+{
+	margin-right: auto;
+	margin-left: auto;
+}
+
+#api
+{
+    clear: both;
+    padding: 24px 302px 4px 302px;
+}
+
+#tutorials a, #other a
+{
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 26px;
+	color: #343050;
+	border-bottom: 1px solid #484858;
+	text-decoration: none;
+}
+
+#api a
+{
+    font-size: 24px;
+	color: #282C48;
+    font-weight: bold;
+	border-bottom: 2px solid #404050;
+	text-decoration: none;
+}
+
+#tutorials a:hover, #tutorials a:active, 
+#other a:hover, #other a:active, 
+#api a:active, #api a:hover
+{
+	color: #585C98;
+	text-decoration: underline;
+}

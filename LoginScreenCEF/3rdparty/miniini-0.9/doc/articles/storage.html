@@ -1,0 +1,226 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+<META NAME="generator" CONTENT="http://txt2tags.sf.net">
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<LINK REL="stylesheet" TYPE="text/css" HREF="../docstyle.css">
+<TITLE>Internal storage of INI data in MiniINI</TITLE>
+</HEAD>
+<BODY>
+
+<DIV CLASS="header" ID="header">
+<H1>Internal storage of INI data in MiniINI</H1>
+</DIV>
+
+<DIV CLASS="body" ID="body">
+<P>
+This article explains how INI sections and tags are stored by MiniINI and 
+compares it to other possible implementations of INI data storage. Reading this
+article isn't necessary to use MiniINI, but it should explain its workings to
+those who wish to understand and/or modify it.
+</P>
+<H2>INIFile</H2>
+<P>
+<I>INIFile</I> provides access to INI data and ensures that the user can't 
+manipulate it directly to prevent errors. <I>INIFile</I> handles creation and
+deletion of INISections and any resulting errors so even larger changes to 
+implementation won't break the interface. <I>INIFile</I> is a simple container, 
+storing <I>INISections</I> in an array of pointers.
+</P>
+<H2>INISection</H2>
+<H3>Basic INISection implementation idea</H3>
+<P>
+To implement INI data storage, one could use something like this:
+</P>
+<PRE>
+class INISection
+{
+    private:
+        std::map&lt;std::string, std::string&gt; TagValues;
+};
+</PRE>
+<P></P>
+<P>
+This is very simple to code and might be good enough in most cases. However, 
+there's actually quite large overhead here.
+</P>
+<P>
+Let's look at memory usage. Each tag is stored as two std::strings. On a 64bit 
+machine, <I>std::string</I> usually contains at least the following data members: 
+</P>
+<PRE>
+32bit unsigned UsedBytes;
+32bit unsigned AllocatedBytes;
+64bit pointer  String;
+</PRE>
+<P></P>
+<P>
+We also have to count the trailing zero, which adds one more byte. As each tag
+uses <B>two</B> C++ strings, this adds up to 34 bytes for every single tag in the 
+file. Also, as the string data is in dynamically allocated buffers, we have to
+count with some bookkeeping bytes to increase this even further. Now, your 
+typical INI tag, such as:
+</P>
+<PRE>
+tagname=value
+</PRE>
+<P></P>
+<P>
+might have about 10-20 bytes of useful data on average. This means that the size 
+of stored data is usually more than doubled.
+</P>
+<P>
+If you want to support tags with multiple values, such as:
+</P>
+<PRE>
+tagname=val1,val2,val3
+</PRE>
+<P>
+this can get even worse, as you'd have to use something like:
+</P>
+<PRE>
+std::map&lt;std::string, std::vector&lt;std::string&gt;&gt; TagValues;
+</PRE>
+<P>
+In this case, even for tags with just one value, you can expect 16 more bytes
+which is usually the size of <I>std::vector</I>. So 50+ bytes per, 10-20 bytes 
+of useful data. Also, the data can be spread all over the memory, which won't be
+good for cache performance.
+</P>
+<P>
+Allocating all these little blocks of memory takes a lot of time, and STL 
+classes do a lot of copying and reallocation when used, which slows down parsing
+and accessing the data significantly.
+</P>
+<P>
+Of course, this won't affect you if you're using 20kiB INI files on a modern PC, 
+but could cause a performance hit if you're coding for a platform with limited 
+resources or storing large amount of data in INI files.
+</P>
+<H3>A more effective way</H3>
+<P>
+The first thing that comes to mind is to minimize usage of STL classes. For
+instance, replacing std::strings by C strings should save some memory. 
+<I>INISection</I> could be reimplemented as follows:
+</P>
+<PRE>
+class INISection
+{
+    struct TagValue
+    {
+        unsigned Size;
+        char ** TagAndValues;
+    };
+    private:
+        std::vector&lt;TagValue&gt; TagValues;
+};
+</PRE>
+<P></P>
+<P>
+where <I>TagAndValues</I> is a buffer of C strings, first of which is the tag name,
+and others are values (multi value tags are supported here). Size is number of 
+strings in <I>TagAndValues</I>.
+</P>
+<P>
+Memory overhead per tag is at least 4 + 8 + Size * (8 + 1) bytes, or 30+ bytes 
+per tag. This is better than 50+ bytes in the previous case, but we can still 
+expect INI data size to double. As now handle memory manually, we can cut down 
+STL's reallocation and copying, at the cost of considerably uglier code.
+</P>
+<P>
+We still haven't solved the greatest problem of previous implementation, which 
+is the fact that INI data is spread over many small buffers, each of which 
+requires an 8-byte pointer and 1-byte trailing zero character, plus unknown
+number of bookkeeping bytes for dynamically allocated memory.  Still, cache
+performance should be a bit better thanks to smaller data size.
+</P>
+<H3>How MiniINI does this</H3>
+<P>
+If you measure memory usage of MiniINI (using tools such as Massif), you might 
+notice that it usually uses only a bit more memory than the size of files it 
+loads. So how does MiniINI get rid of all that overhead?
+</P>
+<P>
+If you look at <I>INISection</I> implementation in MiniINI, it might not be very 
+descriptive. Even though it supports multi value tags, you'd see something
+like this:
+</P>
+<PRE>
+class INISection
+{
+    private:
+        unsigned Length;
+        char ** Tags;
+};
+</PRE>
+<P></P>
+<P>
+There is apparently just a single dynamically allocated array of strings. So 
+where did the vector of arrays of strings go?
+</P>
+<P>
+The answer lies in how MiniINI stores tags. Each tag with all its values is 
+stored in a single buffer. Normally, we expect to store just one string in a 
+buffer. However, thanks to the fact that C/C++ uses a zero as the end of the 
+string, we can actually have multiple strings in a single buffer. Each tag in
+MiniINI consists of tag name, ended by a trailing zero, followed by any number 
+of tag values, each followed by a zero, and the last value is followed by two 
+zeroes. So a tag like:
+</P>
+<PRE>
+tag=val1,val2,val3
+</PRE>
+<P></P>
+<P>
+would be stored like this:
+</P>
+<PRE>
+"tag\0val1\0val2\0val3\0\0"
+</PRE>
+<P></P>
+<P>
+This removes the ability to directly access each value, which would seemingly
+slow down the implementation. This is not necessarily the case, however. If 
+we're reading a single value tag, the cost of skipping the tag name string is
+insignificant compared to the time it took to search for the requested tag. 
+We also save the time that would be spent on allocation of extra buffers in the
+previous case. When reading multiple values from a single tag, we must skip one 
+string per every value, instead of allocating one buffer for every value at 
+load. Decreased memory use and improved cache performance help as well. 
+</P>
+<P>
+Memory overhead is now reduced to 8 + (number of values + 1) + 1 bytes per tag.
+For a tag with one value, this is 11 bytes. That's a lot less than previous 30+.
+Noticed the lack of the + ? That's because there is one last important thing
+about how MiniINI stores data, the Allocator class.
+</P>
+<H2>Allocator</H2>
+<P>
+Even with optimizations shown above, we still have many small buffers in 
+different memory locations, each separately allocated and deleted and each with
+its bookkeeping bytes. The <I>Allocator</I> class minimizes this overhead.
+</P>
+<P>
+<I>Allocator</I> is a pretty primitive piece of code. Each <I>INIFile</I> has a single
+<I>Allocator</I> created at initialization, and asks <I>Allocator</I> to allocate an 
+area of memory (usually roughly the size of loaded file). <I>Allocator</I> 
+allocates memory in a few large blocks (usually ~16) and any <I>INISections</I> 
+created request memory from <I>Allocator</I> instead of allocating it directly. If
+there is no space left, a new block is allocated with sufficient size and when 
+no memory in a block is used anymore, that block is deleted. 
+</P>
+<P>
+This reduces previously needed 1 new/delete pair per tag to ~16 new/delete pairs 
+overall, saving computation time, getting rid of most bookkeeping data overhead 
+and greatly improving cache performance since the data is close together.
+</P>
+<HR NOSHADE SIZE=1>
+<P></P>
+<P>
+<B>Last update: 07-07-2010</B>
+</P>
+</DIV>
+
+<!-- html code generated by txt2tags 2.5 (http://txt2tags.sf.net) -->
+<!-- cmdline: txt2tags -t html -v -\-encoding utf-8 -\-css-sugar -\-style ../docstyle.css ./doc/articles/storage.txt -->
+</BODY></HTML>

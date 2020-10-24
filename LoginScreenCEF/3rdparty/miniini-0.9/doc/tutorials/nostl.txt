@@ -1,0 +1,24 @@
+Compiling MiniINI without STL support
+
+
+By default, MiniINI includes STL and contains methods using STL classes. If you
+need absolute minimalism, e.g. for embedded systems, STL might be too big.
+
+MiniINI has an option to disable STL support. With GCC, you can compile it 
+without STL support using:
+```
+make no-stl
+```
+With other compilers, you will need to define macro __MINIINI_NO_STL__ at 
+compilation.
+
+You also have to define macro __MINIINI_NO_STL__ before inclusion of the
+MiniINI header, e.g.:
+```
+#define MINIINI_NO_STL
+#include <miniini.h>
+```
+
+--------------------------------------------------------------------------------
+
+**%%mtime(Last update: %d-%m-%Y)**

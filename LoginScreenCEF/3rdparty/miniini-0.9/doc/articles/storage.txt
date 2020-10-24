@@ -1,0 +1,186 @@
+Internal storage of INI data in MiniINI
+
+
+This article explains how INI sections and tags are stored by MiniINI and 
+compares it to other possible implementations of INI data storage. Reading this
+article isn't necessary to use MiniINI, but it should explain its workings to
+those who wish to understand and/or modify it.
+
+== INIFile ==
+
+//INIFile// provides access to INI data and ensures that the user can't 
+manipulate it directly to prevent errors. //INIFile// handles creation and
+deletion of INISections and any resulting errors so even larger changes to 
+implementation won't break the interface. //INIFile// is a simple container, 
+storing //INISections// in an array of pointers.
+
+== INISection ==
+
+=== Basic INISection implementation idea ===
+
+To implement INI data storage, one could use something like this:
+
+```
+class INISection
+{
+    private:
+        std::map<std::string, std::string> TagValues;
+};
+```
+
+This is very simple to code and might be good enough in most cases. However, 
+there's actually quite large overhead here.
+
+Let's look at memory usage. Each tag is stored as two std::strings. On a 64bit 
+machine, //std::string// usually contains at least the following data members: 
+
+```
+32bit unsigned UsedBytes;
+32bit unsigned AllocatedBytes;
+64bit pointer  String;
+```
+
+We also have to count the trailing zero, which adds one more byte. As each tag
+uses **two** C++ strings, this adds up to 34 bytes for every single tag in the 
+file. Also, as the string data is in dynamically allocated buffers, we have to
+count with some bookkeeping bytes to increase this even further. Now, your 
+typical INI tag, such as:
+
+```
+tagname=value
+```
+
+might have about 10-20 bytes of useful data on average. This means that the size 
+of stored data is usually more than doubled.
+
+If you want to support tags with multiple values, such as:
+
+```
+tagname=val1,val2,val3
+```
+this can get even worse, as you'd have to use something like:
+```
+std::map<std::string, std::vector<std::string>> TagValues;
+```
+In this case, even for tags with just one value, you can expect 16 more bytes
+which is usually the size of //std::vector//. So 50+ bytes per, 10-20 bytes 
+of useful data. Also, the data can be spread all over the memory, which won't be
+good for cache performance.
+
+Allocating all these little blocks of memory takes a lot of time, and STL 
+classes do a lot of copying and reallocation when used, which slows down parsing
+and accessing the data significantly.
+
+Of course, this won't affect you if you're using 20kiB INI files on a modern PC, 
+but could cause a performance hit if you're coding for a platform with limited 
+resources or storing large amount of data in INI files.
+
+=== A more effective way ===
+
+The first thing that comes to mind is to minimize usage of STL classes. For
+instance, replacing std::strings by C strings should save some memory. 
+//INISection// could be reimplemented as follows:
+
+```
+class INISection
+{
+    struct TagValue
+    {
+        unsigned Size;
+        char ** TagAndValues;
+    };
+    private:
+        std::vector<TagValue> TagValues;
+};
+```
+
+where //TagAndValues// is a buffer of C strings, first of which is the tag name,
+and others are values (multi value tags are supported here). Size is number of 
+strings in //TagAndValues//.
+
+Memory overhead per tag is at least 4 + 8 + Size * (8 + 1) bytes, or 30+ bytes 
+per tag. This is better than 50+ bytes in the previous case, but we can still 
+expect INI data size to double. As now handle memory manually, we can cut down 
+STL's reallocation and copying, at the cost of considerably uglier code.
+
+We still haven't solved the greatest problem of previous implementation, which 
+is the fact that INI data is spread over many small buffers, each of which 
+requires an 8-byte pointer and 1-byte trailing zero character, plus unknown
+number of bookkeeping bytes for dynamically allocated memory.  Still, cache
+performance should be a bit better thanks to smaller data size.
+
+=== How MiniINI does this ===
+
+If you measure memory usage of MiniINI (using tools such as Massif), you might 
+notice that it usually uses only a bit more memory than the size of files it 
+loads. So how does MiniINI get rid of all that overhead?
+
+If you look at //INISection// implementation in MiniINI, it might not be very 
+descriptive. Even though it supports multi value tags, you'd see something
+like this:
+
+```
+class INISection
+{
+    private:
+        unsigned Length;
+        char ** Tags;
+};
+```
+
+There is apparently just a single dynamically allocated array of strings. So 
+where did the vector of arrays of strings go?
+
+The answer lies in how MiniINI stores tags. Each tag with all its values is 
+stored in a single buffer. Normally, we expect to store just one string in a 
+buffer. However, thanks to the fact that C/C++ uses a zero as the end of the 
+string, we can actually have multiple strings in a single buffer. Each tag in
+MiniINI consists of tag name, ended by a trailing zero, followed by any number 
+of tag values, each followed by a zero, and the last value is followed by two 
+zeroes. So a tag like:
+
+```
+tag=val1,val2,val3
+```
+
+would be stored like this:
+
+```
+"tag\0val1\0val2\0val3\0\0"
+```
+
+This removes the ability to directly access each value, which would seemingly
+slow down the implementation. This is not necessarily the case, however. If 
+we're reading a single value tag, the cost of skipping the tag name string is
+insignificant compared to the time it took to search for the requested tag. 
+We also save the time that would be spent on allocation of extra buffers in the
+previous case. When reading multiple values from a single tag, we must skip one 
+string per every value, instead of allocating one buffer for every value at 
+load. Decreased memory use and improved cache performance help as well. 
+
+Memory overhead is now reduced to 8 + (number of values + 1) + 1 bytes per tag.
+For a tag with one value, this is 11 bytes. That's a lot less than previous 30+.
+Noticed the lack of the + ? That's because there is one last important thing
+about how MiniINI stores data, the Allocator class.
+
+== Allocator ==
+
+Even with optimizations shown above, we still have many small buffers in 
+different memory locations, each separately allocated and deleted and each with
+its bookkeeping bytes. The //Allocator// class minimizes this overhead.
+
+//Allocator// is a pretty primitive piece of code. Each //INIFile// has a single
+//Allocator// created at initialization, and asks //Allocator// to allocate an 
+area of memory (usually roughly the size of loaded file). //Allocator// 
+allocates memory in a few large blocks (usually ~16) and any //INISections// 
+created request memory from //Allocator// instead of allocating it directly. If
+there is no space left, a new block is allocated with sufficient size and when 
+no memory in a block is used anymore, that block is deleted. 
+
+This reduces previously needed 1 new/delete pair per tag to ~16 new/delete pairs 
+overall, saving computation time, getting rid of most bookkeeping data overhead 
+and greatly improving cache performance since the data is close together.
+
+--------------------------------------------------------------------------------
+
+**%%mtime(Last update: %d-%m-%Y)**

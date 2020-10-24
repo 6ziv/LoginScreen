@@ -1,0 +1,15 @@
+prefix=D:/ProgramFiles/vcpkg/packages/libzip_x64-windows-static
+exec_prefix=${prefix}
+bindir=${exec_prefix}/bin
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+zipcmp=${exec_prefix}/bin/zipcmp
+
+Name: libzip
+Description: library for handling zip archives
+Version: 1.7.3
+Libs:  -L${libdir} -lzip
+Libs.private:  -ladvapi32 -lbz2 -lbcrypt -lz
+Cflags: -I${includedir}
+

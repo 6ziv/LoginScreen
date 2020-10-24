@@ -1,0 +1,315 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+<META NAME="generator" CONTENT="http://txt2tags.sf.net">
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<LINK REL="stylesheet" TYPE="text/css" HREF="doc/docstyle.css">
+<TITLE>MiniINI version 0.9.0</TITLE>
+</HEAD>
+<BODY>
+
+<DIV CLASS="header" ID="header">
+<H1>MiniINI version 0.9.0</H1>
+</DIV>
+
+<DIV CLASS="body" ID="body">
+<H2>Introduction</H2>
+<P>
+MiniINI is a free/open source, minimalistic, easy to use C++ library for reading
+INI (aka CFG) files. It has no dependencies other than the standard library and
+should compile on any platform with a standards compliant compiler with C99 
+support. (only a makefile for GCC is included at the moment, though)
+</P>
+<P>
+Main priority of MiniINI is, as its name suggests, minimalism and speed. Its 
+goal is to create fastest INI parser possible without sacrificing ease of use. 
+MiniINI should be especially useful for game development, for instance game 
+settings, properties of units in strategy games, etc. MiniINI is already very
+fast. It takes under 50 ms to load, parse and unload an INI file about 1MB large
+with 512 sections according to benchmarks. This is on a ~1.7 GHz dual-core 
+machine (although MiniINI can only use one core).
+</P>
+<P>
+MiniINI can also check files it reads, and issue warnings for the most common 
+mistakes in ini code. This should be useful mainly for users of programs based 
+on MiniINI, for instance game modders. 
+</P>
+<P>
+At the moment, MiniINI can only read INI files, not write to them. This should 
+change in future versions.
+</P>
+<P>
+You can get newest versions of MiniINI at miniini.tuxfamily.org .
+</P>
+<H3>INI file format</H3>
+<P>
+INI files are text files containing simple values formatted as tag=value pairs,
+for example:
+</P>
+<PRE>
+answer=42
+</PRE>
+<P>
+These are grouped in sections which start by headers containing names in square
+brackets, for example:
+</P>
+<PRE>
+[section]
+</PRE>
+<P>
+INI files can contain comments, which are ignored. Comments usually start by a
+semicolon (default in MiniINI) or hash and continue to the end of line. Example:
+</P>
+<PRE>
+tag=value ;comment
+</PRE>
+<P>
+A simple complete INI file example:
+</P>
+<PRE>
+[General]
+OS=Linux
+Version=0.4
+Renderers=OpenGLRenderer, SWRenderer
+CurrentRenderer=OpenGLRenderer
+
+[OpenGLRenderer]
+ScreenWidth=1024
+ScreenHeight=768
+UseShaders=true
+</PRE>
+<P></P>
+<H2>Features</H2>
+<H4>INI parsing</H4>
+<UL>
+<LI>Reads from INI/CFG files, or from user provided buffer containing contents 
+  of an INI/CFG file. This allows the user e.g. to load data from a compressed 
+  file and pass it to MiniINI.
+<LI>Can read headerless ini/cfg files.
+<LI>Only plain ASCII files are supported. There is no support for Unicode, and 
+  there probably never will be.
+<LI>Case-sensitive. That means that [CASE], [case] and [Case] are not the same 
+  and there is a difference between Tag= and TAG=
+<LI>Ignores *all* spaces, i.e. no spaces/tabs in tags or values. For example:    +
+                  +
+  tag=125685      +
+  and             +
+  t a g = 125 685 +
+                  +
+  both have the same meaning. Spaces _might_ be supported in the future for values, 
+  if there will be a need, but are not planned at the moment.
+<LI>Can read arrays of data from tags with multiple, comma separated values.
+<LI>Can also read arrays from numbered sequences of tags, for example:
+                  +
+                  +
+  a1=1            +
+  a2=2            +
+  a3=3            +
+                  +
+<LI>Cannot write to ini files at this time. This should be implemented in future.
+</UL>
+
+<H4>Interface</H4>
+<UL>
+<LI>Provides methods to read strings, ints, floats and bools from inifile
+  and checks the ini data for errors, allowing the programmer to use
+  their own default values.
+<LI>Supports both plain strings and arrays and STL strings and vectors. STL
+  functionality can be disabled for more minimalism.
+<LI>Supports iteration over contents of INI files.
+</UL>
+
+<H4>Configurability</H4>
+<UL>
+<LI>Supports single line comments with a configurable comment character. So if you
+  want to use *#* instead of *;* , you can. There is no support for multiple 
+  comment characters at the same time for performance reasons.
+<LI>Name=value separator is configurable as well, '=' by default.
+</UL>
+
+<H4>Documentation</H4>
+<UL>
+<LI>Tutorials detailing every feature of the library.
+<LI>Maintained API documentation.
+</UL>
+
+<H4>Performance</H4>
+<UL>
+<LI>Extremely fast. Even multi-MB ini files with hundreds or thousands of sections
+  can be processed in fractions of a second.
+<LI>Low memory usage. Data structure overhead is reduced as much as possible.
+</UL>
+
+<H4>Debugging</H4>
+<UL>
+<LI>Debug build can issue warnings to the user using a callback function 
+  specified by the programmer. For example when a tag from which the program 
+  tries to load an integer contains something else.
+</UL>
+
+<H2>New in this release</H2>
+<P>
+There are almost no changes to the interface in MiniINI 0.9 . However, all 
+testing and benchmarking code was rewritten, some library code was refactored,
+and there was a fucus on improving documentation.
+</P>
+<P>
+Tutorials were rewritten to improve readability. The API documentation has also
+seen heavy changes. Many bugs were fixed and descriptions should now be more,
+well, descriptive.
+</P>
+<P>
+Allocator, INIFile and logging code was refactored.
+</P>
+<P>
+Regression testing code was completely rewritten, and should be more 
+maintainable now.
+</P>
+<P>
+Benchmarking code was rewritten, separated from MiniINI code and more 
+benchmarking functionality was added.
+</P>
+<P>
+All testing and benchmarking scripts were rewritten in Python 3.1 , and again
+the new code should be more maintainable.
+</P>
+<P>
+There were also some small bugfixes. See CHANGES.txt for more details.
+</P>
+<H2>Compiling/Installing/Using</H2>
+<H3>Directory structure</H3>
+<P>
+MiniINI files are split into multiple directories:
+</P>
+<PRE>
+ ./         (top-level directory) MiniINI include file and this readme.
+
+ ./miniini  MiniINI source code        
+
+ ./bin      Compiled binary files, e.g. the library itself.
+
+ ./doc      Documentation.
+
+ ./example  Example programs.
+
+ ./test     Files for regression tester and benchmark scripts.
+</PRE>
+<P></P>
+<H3>Requirements</H3>
+<P>
+MiniINI should compile on any standards compliant C++ compiler, and requires no
+third-party libraries. Basic C99 support is also required. If you have gcc, 
+there is a GNU makefile tested with gcc 4.x , which should also work with older
+gcc versions.
+</P>
+<P>
+MiniINI also includes benchmarking scripts, which require Python and Valgrind to
+run. These scripts are not necessary to compile or use MiniINI and are used for
+development of MiniINI.
+</P>
+<H3>Compiling/Installing with gcc</H3>
+<P>
+Type <U>make</U> in terminal.
+You can now link to compiled libraries (in ./bin) directly, or, if you're on
+a Linux/Unix system, you can install MiniINI by typing <U>make install</U> as a
+root user (e.g. <U>sudo make install</U> if you have sudo) This will compile and
+copy optimized build to <U>/usr/lib/libminiini.a</U> , debug build to 
+<U>/usr/lib/libminiini-dbg.a</U> , and MiniINI headers to <U>/usr/include/</U>.
+</P>
+<P>
+Debug and optimized builds can also be compiled separately using <U>make debug</U>
+and <U>make optimized</U> .
+</P>
+<P>
+You can uninstall MiniINI by typing <U>make uninstall</U> as a root user.
+</P>
+<H3>Using MiniINI</H3>
+<P>
+First, you will need to include <U>miniini.h</U> header file and link with either
+debug or optimized build. To include MiniINI, add this line to your code:
+</P>
+<PRE>
+#include&lt;miniini.h&gt;
+</PRE>
+<P>
+To link with MiniINI using GCC, add this to your compiler options:
+</P>
+<PRE>
+-lminiini 
+</PRE>
+<P>
+for optimized or
+</P>
+<PRE>
+-lminiini-dbg 
+</PRE>
+<P>
+for debug build.
+</P>
+<P>
+If you didn't install MiniINI, you'll also need to add path with <U>miniini.h</U> 
+to header paths of your compiler and path with <U>libminiini.a</U> and/or 
+<U>libminiini-dbg.a</U> to linker paths.
+</P>
+<P>
+For more info you can check <A HREF="doc/index.html">tutorials and API documentation</A> 
+in <U>./doc</U> directory and examples in <U>./example</U> directory.
+</P>
+<H2>License</H2>
+<P>
+MiniINI is free/open source software distributed under the MIT/X11 license. This
+license allows you to use MiniINI in both open and closed source software, free
+of charge, and modify it if you need to.
+</P>
+<P>
+Full text of the license:
+</P>
+<PRE>
+Copyright (c) 2009-2010 Ferdinand Majerech
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+</PRE>
+<P></P>
+<H2>Contact/Credits</H2>
+<P>
+MiniINI homepage: miniini.tuxfamily.org
+</P>
+<P>
+MiniINI Launchpad page: <A HREF="https://launchpad.net/miniini">https://launchpad.net/miniini</A>
+</P>
+<P>
+MiniINI was created by Ferdinand Majerech aka Kiith-Sa kiithsacmp[AT]gmail.com
+</P>
+<P>
+MiniINI was created using Vim and GCC on Ubuntu Linux, as an INI parsing 
+library for Catom <A HREF="https://launchpad.net/catom">https://launchpad.net/catom</A> .
+</P>
+<HR NOSHADE SIZE=1>
+<P></P>
+<P>
+<B>Last update: 09-07-2010</B>
+</P>
+</DIV>
+
+<!-- html code generated by txt2tags 2.5 (http://txt2tags.sf.net) -->
+<!-- cmdline: txt2tags -t html -v -\-encoding utf-8 -\-css-sugar -\-style doc/docstyle.css README.txt -->
+</BODY></HTML>

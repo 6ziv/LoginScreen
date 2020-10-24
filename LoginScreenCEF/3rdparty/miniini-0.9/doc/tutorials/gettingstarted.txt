@@ -1,0 +1,236 @@
+Getting started with MiniINI
+
+
+%!preproc: _0 http://miniini.tuxfamily.org/downloads.php
+
+%!preproc: _1 ../html/classINIFile.html
+%!preproc: _2 ../html/classINIFile.html#aa81ac0a1f221000e823e9ae9c1c43116
+%!preproc: _3 ../html/classINIFile.html#afbe62df01591af9159ec5b62b62de0b0 
+
+%!preproc: _4 ../html/classINISection.html
+%!preproc: _5 ../html/classINISection.html#a5f4fb81fcd03cc3f868afa730077cd98
+%!preproc: _6 ../html/classINISection.html#a647e21495b2b27af63ed520d2f31853b
+%!preproc: _7 ../html/classINISection.html#a5087b7b07058911726fddd7e716cbddc
+%!preproc: _8 ../html/classINISection.html#a2d8825a04306e04a308c92bc1c99a8a6
+
+%!preproc: _9 ../html/index.html
+
+This tutorial will explain everything you need to start using MiniINI in your
+programs. When you are finished, you should be able to load INI files and read
+data from simple tags.
+
+== Setting up MiniINI ==
+
+Currently it's only explained how to set up MiniINI with GCC on Unix. It should 
+be reasonably simple to set it up in any other environment, though. All you need 
+is to compile MiniINI, add a library path to where you have the compiled library 
+(__bin/__ by default), link with it, and add a header path to the top MiniINI
+directory.
+
+=== GCC on Unix using GNU make ===
+First, you need to download MiniINI from the [Downloads _0] section at the 
+MiniINI website. After you download the package, extract it and move to the 
+extracted directory. Compile MiniINI by typing __make__ in terminal. Install it 
+by typing __make install__ as a root (__sudo make install__ if you have sudo). 
+Create a file named __makefile__ in your project directory, with following 
+contents:
+```
+debug: example.cpp
+	g++ -g -Wall -o example-debug example.cpp -lminiini-dbg
+
+optimized: example.cpp
+	g++ -O3 -o example-optimized example.cpp -lminiini
+
+clean:
+	rm -f example.o example-debug example
+```
+When you type __make__ in the terminal, this makefile will compile debug build
+by default, linked with debug build of MiniINI. To build optimized build, type
+__make optimized__ To remove built files, type __make clean__.
+
+==== Makefile explained ====
+
+In the __debug__ target, __-g__ is used to add debugging symbols to the binary 
+and __-Wall__ enables warnings. __-lminiini-dbg__ links the program with the
+debug build of MiniINI.
+
+In the __optimized__ target, we use __-O3__ for maximum optimization. 
+Sometimes, __-Os__ gives better results with MiniINI, especially if your program
+is small. __-lminiini__ links to the default (optimized) build of MiniINI.
+
+The __clean__ target removes files created by compilation.
+
+== The code itself ==
+
+Most MiniINI methods have two versions: one for STL users, using C++ strings and
+vectors, and one for plain C strings and arrays. The latter are more difficult
+to use, but faster. Here we explain how to use MiniINI both with STL and plain C
+data. In order to show STL versions of methods in the tutorial, we explicitly 
+convert C strings to C++ strings even where we'd pass literal strings directly
+in normal use.
+
+There is only one header you need to include to use MiniINI. That is
+__miniini.h__. We also include __iostream__ so we can print what we read.
+```
+#include<miniini.h>
+#include<iostream>
+```
+
+Create a file named example.ini, with these contents:
+```
+[general]
+AppName=HugeRTS2
+AppBuild=4242
+Brightness=0.5
+FullScreen=true
+```
+
+We could use INI file such as this in a game. We have some basic settings here.
+
+Now create a file named example.cpp . All code in this example is in the 
+//main// function.
+```
+int main()
+{
+```
+
+=== INIFile, INISection ===
+
+The most important class in MiniINI is //[INIFile _1]//, which handles loading 
+INI files and accessing INI sections. Here we declare an //INIFile//, then load
+our file using the //[OpenFile _2]// method. //OpenFile// will load given file
+to memory and process it. If you are using C string methods, file name **must**
+be a zero terminated string. If the file was successfully processed, 
+//OpenFile// returns __true__, otherwise it returns __false__ and we print an 
+error. You can only call //OpenFile// on an uninitialized //INIFile//, i.e. you
+can't load to an INIFile that is already loaded.
+
+Non-STL version:
+```
+    INIFile ini;
+    if(!ini.OpenFile("example.ini"))
+        std::cout << "ERROR: Could not open example.ini" << std::endl;
+```
+
+STL version:
+```
+    INIFile ini;
+    std::string fname = "example.ini";
+    if(!ini.OpenFile(fname))
+        std::cout << "ERROR: Could not open example.ini" << std::endl;
+```
+
+We access the __[general]__ section using the //[GetSection _3]// method. This
+method returns a pointer to //[INISection _4]// with given name, which is a 
+class used to read values from a section. If the section doesn't exist, it 
+returns __NULL__ and we print out an error. If you're not using STL methods, 
+section name **must** be a zero terminated string.
+
+MiniINI is case sensitive, so, for example, __[general]__ and __[General]__ are
+not the same thing. Also, MiniINI ignores all spaces, so __name=val__ is the
+same as __name = va l__.
+
+Non-STL version:
+```
+    INISection * general = ini.GetSection("general");
+    if(!general)
+        std::cout << "ERROR: Missing section [general] in example.ini"
+                  << std::endl;
+```
+
+STL version:
+```
+    std::string sname = "general";
+    INISection * general = ini.GetSection(sname);
+    if(!general)
+        std::cout << "ERROR: Missing section [general] in example.ini"
+                  << std::endl;
+```
+=== ReadXXX ===
+
+Now we can read some data from __[general]__. First we declare variables to read 
+data to with INISection methods //[ReadString _5]//, //[ReadInt _6]//, 
+//[ReadFloat _7]// and //[ReadBool _8]//. 
+
+These methods take two arguments: tag name and reference to variable to read to.
+Again, if you're not using STL methods, tag name **must** be a zero terminated
+string. In case of non-STL //ReadString//, only a pointer (C string) to string 
+inside //INISection// is returned, so the data is not copied. This requires the 
+char pointer to be **const**, so that it can't be used to change internal 
+//INISection// data.
+
+**Note:** If you're using the non-STL //ReadString// method, you have to copy 
+the string somewhere before INIFile is destroyed if you still want to use it
+(i.e. before it goes out of scope or is deleted).
+
+These methods return __true__ on success and __false__ if the tag does not exist
+or is invalid (for instance when we //ReadInt// from a tag that does not contain
+data parsable as an integer - this also issues a warning with the debug build 
+when logging callback is provided.)
+
+When we have the data, we print it out so we can see what we've read.
+
+Non-STL version:
+```
+    const char * appname;
+    int appbuild;
+    float brightness;
+    bool fullscreen;
+    if(!general->ReadString("AppName", appname))
+        std::cout << "ERROR: Missing tag AppName= in section [general] in example.ini"
+                  << std::endl;
+    if(!general->ReadInt("AppBuild", appbuild))
+        std::cout << "ERROR: Missing or invalid tag AppBuild= in section [general] in example.ini"
+                  << std::endl;
+    if(!general->ReadFloat("Brightness", brightness))
+        std::cout << "ERROR: Missing or invalid tag Brightness= in section [general] in example.ini"
+                  << std::endl;
+    if(!general->ReadBool("FullScreen", fullscreen))
+        std::cout << "ERROR: Missing or invalid tag FullScreen= in section [general] in example.ini"
+                  << std::endl;
+    std::cout << appname << " build " << appbuild << " fullscreen is "
+              << fullscreen << " brightness is " << brightness << std::endl;
+```
+
+STL version:
+```
+    std::string appname;
+    int appbuild;
+    float brightness;
+    bool fullscreen;
+    std::string appname_tag = "AppName";
+    std::string appbuild_tag = "AppBuild";
+    std::string brightness_tag = "Brightness";
+    std::string fullscreen_tag = "FullScreen";
+    if(!general->ReadString(appname_tag, appname))
+        std::cout << "ERROR: Missing tag AppName= in section [" << sname
+                  << "] in example.ini" << std::endl;
+    if(!general->ReadInt(appbuild_tag, appbuild))
+        std::cout << "ERROR: Missing or invalid tag AppBuild= in section ["
+                  << sname << "] in example.ini" << std::endl;
+    if(!general->ReadFloat(brightness_tag, brightness))
+        std::cout << "ERROR: Missing or invalid tag Brightness= in section ["
+                  << sname << "] in example.ini" << std::endl;
+    if(!general->ReadBool(fullscreen_tag, fullscreen))
+        std::cout << "ERROR: Missing or invalid tag FullScreen= in section ["
+                  << sname << "] in example.ini" << std::endl;
+    std::cout << appname << " build " << appbuild << " fullscreen is "
+              << fullscreen << " brightness is " << brightness << std::endl;
+```
+
+Now you should have the basic idea about how to use MiniINI. All that is left 
+is to finish the main function. This is where our INI file goes out of scope, 
+and all its data is deleted.
+
+```
+    return 0;
+}
+```
+
+You can find example code for this tutorial in the **example/Getting_started**
+directory in the MiniINI package. To learn about other features of MiniINI,
+read other tutorials or the [API documentation _9].
+
+--------------------------------------------------------------------------------
+
+**%%mtime(Last update: %d-%m-%Y)**

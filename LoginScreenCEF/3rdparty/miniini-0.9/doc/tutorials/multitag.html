@@ -1,0 +1,244 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+<META NAME="generator" CONTENT="http://txt2tags.sf.net">
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<LINK REL="stylesheet" TYPE="text/css" HREF="../docstyle.css">
+<TITLE>Reading arrays of data</TITLE>
+</HEAD>
+<BODY>
+
+<DIV CLASS="header" ID="header">
+<H1>Reading arrays of data</H1>
+</DIV>
+
+<DIV CLASS="body" ID="body">
+<P>
+There are two ways to read arrays with MiniINI. The first is to read from tags 
+with multiple values. The other is to read from series of numbered tags.
+</P>
+<P>
+Reading from multi value tags is both faster (parsing wise), and such tags take
+less space. Series of tags might be more practical in some cases, though. Both
+ways are explained here.
+</P>
+<H2>ReadMultiXXX</H2>
+<P>
+MiniINI parses commas as value separators, so a value with commas will be parsed
+as an array. This also means a single value <B>can't</B> contain commas. You can 
+read from multi value tags using <I>INISection</I> methods 
+<I><A HREF="../html/classINISection.html#ad69713407b2de2046421a91c0a94ad98">ReadMultiString</A></I>, <I><A HREF="../html/classINISection.html#a4dd5da84e3005356f338cf9f435cd043">ReadMultiInt</A></I>, <I><A HREF="../html/classINISection.html#a4c073d060102c69ab737eb7bcc6d4cce">ReadMultiFloat</A></I> and 
+<I><A HREF="../html/classINISection.html#a3f11bbf647f07fabcb77e9d909333008">ReadMultiBool</A></I>. These methods have versions to read to plain C arrays 
+and STL vectors. Like the <I>ReadXXX</I> methods, they work similarly to each 
+other.
+</P>
+<P>
+Non-STL versions take tag name, buffer to read to and buffer capacity, i.e. 
+<B>how many values</B> of read type the buffer can hold. They return number of 
+values read (zero if the tag doesn't exist). Tag name <B>must</B> be a zero 
+terminated string and the buffer must have at least specified capacity. 
+<I>ReadMultiXXX</I> will read <B>at most</B> as many values as specified capacity, 
+even if there are more in the file. <I>ReadMultiString</I>, like <I>ReadString</I>, 
+only writes pointers (C strings) to the buffer, so you have to copy the data if
+you want to use it after the <I>INIFile</I> is deleted.
+</P>
+<P>
+STL versions are a bit simpler: Like STL <I>ReadXXX</I>, tag name is a C++ string, 
+and the buffer is a vector. There is no need to pass capacity as vector can 
+enlarge as needed. Like the non-STL version, number of read values is returned.
+</P>
+<P>
+<B>Note:</B> if a value has incorrect type (e.g. <U>"abc"</U> can't be parsed as int 
+when using <I>ReadInt</I>), only values before it are read.
+</P>
+<P>
+Example:
+</P>
+<P>
+If we have a file containing a multi value tag like this:
+</P>
+<PRE>
+;section header, other tags
+;...
+images=01.png,02.png,03.png
+;...
+;other ini data
+</PRE>
+<P></P>
+<P>
+We can read to array like this:
+</P>
+<P>
+Non-STL version:
+</P>
+<PRE>
+//load a file, get section...
+unsigned cap = 16;
+const char** buf = new const char* [cap];
+unsigned imgcount = section-&gt;ReadMultiString("images", buf, cap);
+if(!imgcount)
+    std::cout &lt;&lt; "ERROR: Could not find multi value tag images=";
+for(unsigned image = 0; image &lt; imgcount; ++image)
+    std::cout &lt;&lt; buf[image] &lt;&lt; std::endl;
+//more code and deinitialization - don't forget to delete buf !
+</PRE>
+<P></P>
+<P>
+STL version:
+</P>
+<PRE>
+//don't forget to include &lt;vector&gt;
+//load a file, get section...
+vector&lt;std::string&gt; buf;
+std::string name = "images";
+unsigned imgcount = section-&gt;ReadMultiString(name, buf);
+if(!imgcount)
+    std::cout &lt;&lt; "ERROR: Could not find multi value tag images=";
+for(unsigned image = 0; image &lt; imgcount; ++image)
+    std::cout &lt;&lt; buf[image] &lt;&lt; std::endl;
+//more code and deinitialization
+</PRE>
+<P></P>
+<H2>MultiValSize</H2>
+<P>
+In above examples using non-STL methods, we allocate a fixed space of memory 
+without knowing size needed to store all values. <I>INISection</I> method 
+<I><A HREF="../html/classINISection.html#a4852ef4392e2148cb8a34f18f3526e74">MultiValSize</A></I> can determine this size. It takes a tag name, and returns 
+number of values in that tag (zero if the tag doesn't exist). Again, the tag 
+name <B>must</B> be a zero terminated string.
+</P>
+<P>
+Non-STL example with MultiValSize:
+</P>
+<PRE>
+//load a file, get section...
+unsigned cap = section-&gt;MultiValSize("images");
+const char** buf = new const char* [cap];
+unsigned imgcount = section-&gt;ReadMultiString("images", buf, cap);
+if(!imgcount)
+    std::cout &lt;&lt; "ERROR: Could not find multi value tag images=";
+for(unsigned image = 0; image &lt; imgcount; ++image)
+    std::cout &lt;&lt; buf[image] &lt;&lt; std::endl;
+//more code and deinitialization - don't forget to delete buf !
+</PRE>
+<P></P>
+<P>
+Now you should know all you need to load arrays from multi value tags. If you
+don't want to learn about how to read arrays from series of numbered tags, you
+can skip the rest of the tutorial.
+</P>
+<H2>ReadXXXs</H2>
+<P>
+MiniINI can also read arrays from series of numbered tags, such as:
+</P>
+<PRE>
+img1=01.png
+img2=02.png
+img3=03.png
+...
+img10=10.png
+</PRE>
+<P></P>
+<P>
+Indices in INI files start at 1, not 0 like C/C++ arrays. Reading arrays this
+way is almost the same as multi value tags, but instead of <I>ReadMultiXXX</I> and 
+<I>MultiValSize</I> you use <I><A HREF="../html/classINISection.html#a5c9a514276fe8ce0cc8b8b316da5bf61">ReadStrings</A></I>, <I><A HREF="../html/classINISection.html#aaf2e3849da2b89663d8f3634b475af8d">ReadInts</A></I>, 
+<I><A HREF="../html/classINISection.html#a9db644426ab74eae242b9ce4a53673c4">ReadFloats</A></I>, <I><A HREF="../html/classINISection.html#a3a3ef6da0bf9ea065bcc0dadd402acdd">ReadBools</A></I> and <I><A HREF="../html/classINISection.html#a2db4119ef6df16077496793b9663854b">ArraySize</A></I>. The first 
+argument of <I>ReadXXXs</I> is a base name of tags in the sequence, i.e. <U>"img"</U> 
+in the above example. Other arguments are identical.
+</P>
+<P>
+If you want just plain numbers without a base name, you can use empty string 
+(<U>""</U>), to read from a sequence like this:
+</P>
+<PRE>
+1=01.png
+2=02.png
+3=03.png
+</PRE>
+<P></P>
+<P>
+If an index is missing (e.g. you have <U>img1</U> and <U>img3</U>, but not <U>img2</U>), 
+only values before that index are read. Same thing happens if a value can't be
+parsed as the expected type.
+</P>
+<P>
+Example:
+</P>
+<P>
+If a file contains this:
+</P>
+<PRE>
+;section header, other tags
+;...
+img1=01.png
+img2=02.png
+img3=03.png
+;...
+;other data
+</PRE>
+<P></P>
+<P>
+We can read it using <I>ReadXXXs</I> like this:
+</P>
+<P>
+Non-STL version:
+</P>
+<PRE>
+//load a file, get section...
+unsigned cap = 16;
+const char** buf = new const char* [cap];
+unsigned imgcount = section-&gt;ReadStrings("img", buf, cap);
+if(!imgcount)
+    std::cout &lt;&lt; "ERROR: Could not find multi value tag images=";
+for(unsigned image = 0; image &lt; imgcount; ++image)
+    std::cout &lt;&lt; buf[image] &lt;&lt; std::endl;
+//more code and deinitialization - don't forget to delete buf !
+</PRE>
+<P></P>
+<P>
+STL version:
+</P>
+<PRE>
+//don't forget to include &lt;vector&gt;
+//load a file, get section...
+vector&lt;std::string&gt; buf;
+std::string name = "img";
+unsigned imgcount = section-&gt;ReadStrings(name, buf);
+if(!imgcount)
+    std::cout &lt;&lt; "ERROR: Could not find multi value tag images=";
+for(unsigned image = 0; image &lt; imgcount; ++image)
+    std::cout &lt;&lt; buf[image] &lt;&lt; std::endl;
+//more code and deinitialization
+</PRE>
+<P></P>
+<P>
+<I>ArraySize</I> is similar to <I>MultiValSize</I>, but it determines number of tags 
+with given base name.
+</P>
+<P>
+Non-STL version using <I>ArraySize</I> to determine space to allocate:
+</P>
+<PRE>
+//load a file, get section...
+//...
+unsigned cap = section-&gt;ArraySize("img");
+const char** buf = new const char* [cap];
+unsigned imgcount = section-&gt;ReadStrings("img", buf, cap);
+if(!imgcount)
+    std::cout &lt;&lt; "ERROR: Could not find tag array img";
+for(unsigned image = 0; image &lt; imgcount; ++image)
+    std::cout &lt;&lt; buf[image] &lt;&lt; std::endl;
+//more code and deinitialization - don't forget to delete buf !
+</PRE>
+<P></P>
+<HR NOSHADE SIZE=1>
+<P></P>
+<P>
+<B>Last update: 07-07-2010</B>
+</P>
+</DIV>
+
+<!-- html code generated by txt2tags 2.5 (http://txt2tags.sf.net) -->
+<!-- cmdline: txt2tags -t html -v -\-encoding utf-8 -\-css-sugar -\-style ../docstyle.css ./doc/tutorials/multitag.txt -->
+</BODY></HTML>

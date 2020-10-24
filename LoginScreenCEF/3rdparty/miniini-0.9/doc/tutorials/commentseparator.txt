@@ -1,0 +1,38 @@
+Changing comment, tag/value separator character
+
+
+%!preproc: _0 ../html/globals_8h.html#a9f1cbc7ef3f93f4974489200205ca3dc 
+%!preproc: _1 ../html/globals_8h.html#a813b3109ba4da670f9ef7a306ff9c52d 
+
+MiniINI can only have single comment character, but not all INI files use
+semicolon (__';'__) for comments. For instance, the __'#'__ character is 
+commonly used for this purpose. Fortunately, it's possible to set the character 
+to specify comments.
+
+To do this, we use the //[INISetComment _0]// function. It takes one argument: 
+the comment character. //INISetComment// returns __true__ if the comment 
+character was set successfully, __false__ otherwise. (Other characters that have 
+special meanings in an ini file, such as __'['__ or __'\n'__ can't be used to 
+specify comments.)
+
+You can also change the name/value separator character (__'='__ by default),
+using the //[INISetSeparator _1]// function. This function works just like 
+//INISetComment//: it takes a character to use as the separator, returns 
+__true__ if it was set successfully, __false__ otherwise.
+
+**NOTE:** //INISetComment// and //INISetSeparator// will only affect files 
+opened **after** they were called!
+
+Example:
+```
+INISetComment('#');
+INISetSeparator(':');
+```
+
+This will make MiniINI parse anything between __'#'__ and end of line as a 
+comment (i.e. ignore it) and separate tag names and values by the __':'__ 
+character. 
+
+--------------------------------------------------------------------------------
+
+**%%mtime(Last update: %d-%m-%Y)**

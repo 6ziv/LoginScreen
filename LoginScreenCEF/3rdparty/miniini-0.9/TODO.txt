@@ -1,0 +1,231 @@
+TODO 0.10+:
+Tools:
+1:
+    Projects for various IDEs and make alternatives.
+    Move default build system to something else than make.
+    Probably SCons. Then create a benchmark-extra target.
+2:
+    Tester: provide tests for situations such as NULL buffer passed to LoadBuffer,
+    non-INI, nonexistent file passed to OpenFile etc.
+    We also need tests designed specifically to test Allocator.
+    Maybe even separate testgroup that doesn't even use INIFiles/Sections,
+    just Allocator directly.
+3:
+    Tester:
+    Verbosity options: Normal: no MiniINI warnings, minimal info
+                       Verbose: no MiniINI warnings, detailed info
+                       More verbose: MiniINI warnings, detailed info
+4:
+    Makefile:
+    Benchmark, tester should be non-essential. I.e. if making any of them fails,
+    emit a warning but make everything else.
+5:
+    A printini tool (binary), that prints all contents of MiniINI,
+    with chars like \n or EOL emphasized.
+6:
+    Benchmark (no need for bench-extra as it won't cause slowdown') - memory
+    usage calculations (i.e. sizeof(INIFile) + sizeof(Allocator) + size of
+    Allocator blocks + INIFile length * (sizeof(INISection *) + sizeof(INISection))
+    + (for every INISection) INISection length * sizeof(c *) + size of all globals and
+    statics. This can't measure bookkeeping bytes, but can still provide
+    an alternative to Massif measurements. Use measured data to consider
+    minimizing memory usage by decreasing size of INISection members, global
+    buffers, both in debug and optimized, measure cache performance after any
+    optimizations.
+    - names and tags are stored in allocator, so no need to count them twice
+7:
+    Use a script to replace contents the rulesmd.ini test file by randomly
+    generated contents with equally long strings
+8:
+    Scripts- try to refactor all XXXGroup functionality to few/one class/es
+    (maybe put that into a module?) - at least create a base class if possible
+9:
+    One of test ini files, or a new test ini file, should contain a test input
+    with huge sections (4096+ tags)
+
+Error checking/Debugging:
+1:
+    Modify parseint and maybe other functions to make sure they can work
+    even on machines where int is 16 or 64 bit. Probably use #ifdef to do that.
+2:
+    Make sure there never are two tags or sections with the same name
+	(+ warnings). Or at least have the warnings and mention this
+	in documentation. This will have to wait until current Insert based
+    sorting is replaced as optimized builds break this functionality.
+
+Interface:
+1:
+    Writing functionality - AddTag, AddSection, DeleteTag, DeleteSection, SetTag
+    Deleting should be the easiest part, so let's do that first.
+    Note that deleting sections will need a specific INISection destructor.
+    The priority should be to get _working_ writing first, fast later. So don't
+    worry even if every single AddXXX, DeleteXXX, SetXXX results in writing to file.
+    Maybe SetTag and AddTag should be the same method that adds a new tag if it
+    doesn't exist.
+
+Speed:
+1+:
+    Sorting idea: When initializing static INISection data, also create
+    arrays or c* for every char (i.e. 255 of them). These will be used in
+    bucket sorting like so:
+    When section loading, every tag goes to bucket with its starting char, and
+    is sorted using the standard insert method there.
+    When we're finished, concatenate the buckets to the Tags array.
+    Implement this and benchmark.
+    Especially benchmark this on rulesmd2.ini and on arrays (where almost all
+    elems will go to the same bucket so overhead will be greatest)
+2+:
+    Instead of 4; implement MSD radix sort.
+    Both 4; and 5; have to be benchmarked on huge array input which should be
+    slow for the current sort.
+3:
+    ReadStrings code as macro in ReadInts/Floats/Bools might be useful as
+    there would be no need to create a buffer of pointers to strings, they could be
+    used directly.
+
+    This would get us at best about 4%, usually about 1.5%.
+    However, it would require removing ParseInts, ParseFloats, ParseBools,
+    and make code much more of a mess.
+    Fortunately, most of time wasted is spent on new/delete, which means:
+    To Allocator, add a special on-demand block, that doesn't get deleted,
+    but is small and only capable of holding a single buffer at a time.
+    This removes reallocating complexity as, since there are no other buffers
+    in the block, we can reallocate freely when we ask for memory.
+
+    So create such a block and use it for methods that only allocate memory
+    once, in a small buffer. This block should never contract, unless it
+    gets over some size that's considered too much (so when we're loading
+    multitags with 10000 values, the memory gets freed right away)
+    - this "too much" size should be relative to file size (5%?),
+    but at least 64 bytes (usual cache line size)
+
+    However, this might not be needed. At first, just use the normal allocator.
+    Then measure any increases in memory use (as each new buffer gets deleted
+    right after it's allocated, allocator should quickly delete any new blocks)
+
+    Note that this will require changes to allocator's NewSpace, DeleteSpace
+    methods. Void * might be used as an argument, but templates would probably
+    be better.
+
+    Implement, benchmark.
+
+4:
+    Try to improve branch prediction in most used functions
+    Try using __builtin_expect + -freorder-blocks or -O2 .
+    Also try to decrease cache misses by manual prefetching.
+    Have to benchmark that with bench-extra to get time, not instruction
+    count
+5:
+    Optimized string operations (strlen, etc.) as described in strchr.com articles.
+    Possibly optional code specific for SSE 4.2 .
+    Optimizations based on Intel optimization manual.
+6:
+    Try using attribute __const__ for pure functions
+7:
+    Optimizations specifically targeting reading small files
+    (<32kiB, as well as <1kiB) -especially Allocator could handle smaller
+    files better (allocate less blocks to waste less memory)
+    Currently, memory usage won't go below 4135 bytes even with an empty
+    file. It might be possible to halve that.
+
+
+Refactoring:
+
+Docs:
+1:
+    What MiniINI loads and how (for instance, empty section headers are ignored)
+2:
+    An article about MiniINI parsing process (After sorting gets rewritten)
+
+Web:
+
+TODO 1.0+
+Tools:
+1-:
+    Reintroduce profile guided optimization, include in release
+    Note: Library PGO can use gca files generated by profiling run (although we might
+    have to set the not-exactly-same-source error to warning)
+2?:
+    Better INISection array benchmark: should search for arrays in a section
+    by itself (need to find 2 tags starting with the same characters - start
+    by comparing first char, then another, etc, if we get to a number in multiple
+    tags starting by the same letter, find 1 and 2, if done, we can assume we
+    found the array.)
+3:
+    .deb packaging script
+4?:
+    Maybe a simple GUI for test.py (whether to benchmark or compare,
+    which inifiles to use, etc)
+5:
+    testutil.py:
+    support for gprof
+    options for memcheck, cachegrind, callgrind, massif/ms_print
+    maximum, average heap, stack and bookkeeping bytes from massif out file
+    rename to a more descriptive script name (other scripts might need that as well)
+6-:
+    dynamic linking
+7:
+    testutil.py:
+    More detailed stats with bench-extra and possibly run time tests -
+    i.e. mean, median, average error, measurement errors
+8?:
+    Test.py - possibly- stats about how tag count, etc. affect
+    execution time, memory use etc. (might need a separate tool) - e.g. does
+    this value increase execution time linearly? etc.
+9:
+    Testgen.py:
+    on verbose:
+    show estimated filesize at start
+    show currently generated filesize 
+    show percentage of generation done based on above
+
+Error checking/debugging:
+1:
+    warning when whitespace is ignored in a header
+    warning when [ or ] is detected in a val
+    warning when there's only ] in line
+    warning when there are multiple sections/tags with same name
+    warning when there is [ and ] in wrong order
+    warning when there is [ and/or ] with name=value separator in the same line
+    warning when there are characters after ] in a line
+    warning when there is [ after [
+    warning when two-more tags/sections with same name and ignore all but the
+            first one
+    warning when header is empty
+2:
+    Thread safety
+
+Interface:
+1+:
+    A plain C wrapper, Vala wrapper, maybe a Python wrapper as well
+2:
+    A (template?) generic Read method for serialization, that will construct an
+    object as long as it has a string constructor. E.g. a template method that
+    will execute ctor of given type on the referenced variable to write to.
+    Maybe a corresponding write method as well. This might require more
+    intelligent whitespace handling - either using double quotes or removing
+    spaces around tag names and values - the latter isn't impossible, one
+    possible implementation is to keep a space counter variable, and if we hit a
+    non-space char after a space sequence., we add that many spaces.
+    If we hit the end of line, we don't add them. In order to prevent an if check
+    every character if we've had a space sequence last character we could enter a
+    separate loop with the first space that will exit at first non-space character.
+    If done right this could mean overhead only when spaces exist.
+    Also offer detailed stats, i.e. which items take how much memory.
+
+Speed:
+
+Refactoring:
+
+Docs:
+1+:
+    Write a simple example game using MiniINI (Tetris, Asteroids, Arkanoid clone
+    or something along those lines)
+2?:
+    Custom, non-Doxygen, txt2tags API doc in style of OpenGL API doc - 
+    groups of method such as ReadXXX can be documented in one place.
+    Doxygen-like comments in code should stay for the developer, though.
+
+Web:
+1?:
+    Wiki(once needed, _if_ ever needed)

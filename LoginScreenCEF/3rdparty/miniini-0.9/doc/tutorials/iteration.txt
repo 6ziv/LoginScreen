@@ -1,0 +1,83 @@
+Iterating over INI data
+
+
+%!preproc: _0 ../html/classINIFile.html#a65c96c2d9c7eed06c6d25785aeb2bb8e
+%!preproc: _1 ../html/classINISection.html#a4805dae8c6f3d7534e814abac7daf27a
+%!preproc: _2 ../html/classINISection.html#a191bbf02275e6e1faa7b1f1529dfec28
+%!preproc: _3 ../html/classINIFile.html#aaa4e120e894f53a0c9adee365982aa5e
+%!preproc: _4 ../html/classINISection.html#accfb6325fc0d86cf119fb849378dfde9
+%!preproc: _5 ../html/classINISection.html#a1af55e2f3757d2dbbf9083d2912bfc75
+%!preproc: _6 ../html/classINISection.html#a8267f2178972d7e06f3ff4c0965fdd6c
+%!preproc: _7 ../html/classINISection.html#a093881e87673a66d0aeaa193e6f933df
+
+Not always do you know what sections or tags will be INI files you read. A game,
+for instance, might store properties of game object types in their own INI 
+sections without knowing number of types available. In such cases, you need to
+access sections without using their names. You can do this in MiniINI by 
+iterating over sections in a file or tags in a section.
+
+== Iterating over sections in a file ==
+
+To iterate over sections in an //INIFile//, use the //[Next _0]// method. This 
+method increments the index used internally by //INIFile// to point to the
+current section. By default, this index points before the first section, so the
+first call to //Next// will move to the first element. //Next// returns __true__
+if there are more sections or __false__ if we're at the last section.
+
+To access current section, we use the same //GetSection// method we use to
+access sections by name, but instead of a section name we pass an empty string 
+(__""__). In the example below, we use the //[GetName _1]// method to print 
+names of sections we're iterating over. There is also a //[GetNameSTL _2]//
+method that returns a C++ string.
+
+Example:
+
+```
+//iterate over all sections in a file and print their names
+INIFile ini;
+ini.OpenFile("test.ini");
+while(ini.Next())
+{
+    std::cout << ini.GetSection("")->GetName() << std::endl;
+}
+```
+
+Sections are iterated in alphabetic order. To reset iteration back to the start,
+use the //[Reset _3]// method. Reset takes no parameters and returns nothing.
+
+== Iterating over tags in a section ==
+
+Iteration over tags in an INISection is similar to iteration over sections, 
+using //[Next _4]// method to move to the next element and //[Reset _5]// to 
+move back to start. Additionally, you can use the //[CurrentTag _6]// method to
+get the name of the current tag as a C string and //[CurrentTagSTL _7]// as a 
+C++ //std::string//. Like sections, tags are iterated in alphabetic order.
+
+Similarly to current section, you can access current tag by passing an empty
+string to //ReadXXX// methods. This also works with //ReadMultiXXX// and
+//MultiValSize// (which work with multi value tags) but not with //ReadXXXs//
+or //ArraySize// (which work with sequences of numbered tags). 
+
+Example of iteration over tags in an INISection:
+
+```
+//iterate over all tags in a section, print their names and values
+INIFile ini;
+ini.OpenFile("test.ini");
+INISection * section = ini.GetSection("test");
+const char * str; //STL: std::string str
+while(section->Next())
+{
+    str = section->ReadString("", str);
+    std::cout << section->CurrentTag() << "=" << str << std::endl; 
+    //STL: std::cout << section->CurrentTagSTL() << "=" << str << std::endl; 
+}
+```
+
+**Note:** Due to internal structure of MiniINI code, if you access tags this 
+way, warnings emitted by //ReadXXX// methods will be unable to print names of 
+tags concerned. 
+
+--------------------------------------------------------------------------------
+
+**%%mtime(Last update: %d-%m-%Y)**

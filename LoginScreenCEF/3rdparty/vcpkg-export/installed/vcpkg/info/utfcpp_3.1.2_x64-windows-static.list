@@ -1,0 +1,15 @@
+x64-windows-static/
+x64-windows-static/include/
+x64-windows-static/include/utf8cpp/
+x64-windows-static/include/utf8cpp/utf8.h
+x64-windows-static/include/utf8cpp/utf8/
+x64-windows-static/include/utf8cpp/utf8/checked.h
+x64-windows-static/include/utf8cpp/utf8/core.h
+x64-windows-static/include/utf8cpp/utf8/cpp11.h
+x64-windows-static/include/utf8cpp/utf8/unchecked.h
+x64-windows-static/share/
+x64-windows-static/share/utf8cpp/
+x64-windows-static/share/utf8cpp/utf8cppConfig.cmake
+x64-windows-static/share/utfcpp/
+x64-windows-static/share/utfcpp/copyright
+x64-windows-static/share/utfcpp/vcpkg_abi_info.txt

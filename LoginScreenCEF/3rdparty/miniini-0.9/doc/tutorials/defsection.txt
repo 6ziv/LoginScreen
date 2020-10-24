@@ -1,0 +1,22 @@
+Reading tags before first section
+
+
+Sometimes, you need to have tags before the first section of an INI file. Also,
+some INI files are headerless, i.e. contain only tags and no headers. However,
+MiniINI requires you to read variables from a section.
+
+To support such files, INIFile contains a section called __[DEFAULT]__ that 
+contains tags before the first (if any) section. You can access it like any 
+other section using the //GetSection// method.
+
+**Note**: This section is called __[DEFAULT]__, including brackets, to prevent 
+conflicts with loaded section names as they can't contain brackets.
+
+Example:
+```
+ini.GetSection("[DEFAULT]");
+```
+
+--------------------------------------------------------------------------------
+
+**%%mtime(Last update: %d-%m-%Y)**

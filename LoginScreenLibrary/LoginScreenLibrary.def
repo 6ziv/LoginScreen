@@ -1,0 +1,5 @@
+LIBRARY LoginScreenLibrary.dll
+
+EXPORTS
+    DllCanUnloadNow                                 PRIVATE
+    DllGetClassObject                               PRIVATE

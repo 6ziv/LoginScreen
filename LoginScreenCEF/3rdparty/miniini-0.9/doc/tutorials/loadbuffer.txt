@@ -1,0 +1,77 @@
+Loading ini data from memory
+
+
+%!preproc: _0 ../html/classINIFile.html#a820a07765946cb654f9c51d6830e5cb8
+
+It can be useful to load data from memory instead of a file, e.g. if you store 
+INI files in a compressed file and read them yourself. 
+
+== LoadBuffer ==
+
+MiniINI allows loading INI data from memory using the //[LoadBuffer _0]// method
+of //INIFile//. This tutorial explains how to read a simple INI file to memory
+and parse it using //LoadBuffer//. You can find example code in 
+**example/LoadBuffer** directory in the MiniINI package.
+
+=== The code ===
+
+Create a file called **example.ini** in your project directory, with these 
+contents:
+```
+[section]
+answer=42
+```
+
+First, we include what we need and start the //main// function.
+```
+#include<miniini.h>
+#include<iostream>
+#include<fstream>
+
+int main()
+{
+```
+
+Then we load the file from memory. (Static array is used for the sake of
+simplicity. In real use, you'd determine file size and allocate enough space 
+dynamically.) In order for //LoadBuffer// to work properly, you **must** add a 
+trailing zero to the end of the buffer. Also, you can only call //LoadBuffer// 
+on an //INIFile// that has not yet been loaded (using //OpenFile// or 
+//LoadBuffer//).
+
+```
+    char buf[64];
+    std::ifstream fin( "example.ini" );
+    fin.read(buf, 63);
+    if(fin.bad())
+        std::cout << "ERROR: Could not read from example.ini";
+    buf[63] = '\0';
+```
+
+Now we create an //INIFile// and use //LoadBuffer// to initialize it. 
+//LoadBuffer// takes two arguments: buffer to read from and size of that buffer
+(including the trailing zero). It returns __true__ if the buffer was 
+successfully loaded, __false__ otherwise.
+```
+    INIFile ini;
+    if(!ini.LoadBuffer(buf, 64))
+        std::cout << "ERROR: error in parsing ini file data";
+```
+
+Finally, we read and print data from the //INIFile// to test if everything works
+correctly, and end the //main// function.
+```
+    INISection * section = ini.GetSection("section");
+    if(!section)
+        std::cout << "ERROR: Missing section [section]" << std::endl;
+    int answer;
+    if(!section->ReadInt("answer", answer))
+        std::cout << "ERROR: Missing tag answer=" << std::endl;
+    std::cout << "The answer is " << answer;
+    return 0;
+}
+```
+
+--------------------------------------------------------------------------------
+
+**%%mtime(Last update: %d-%m-%Y)**

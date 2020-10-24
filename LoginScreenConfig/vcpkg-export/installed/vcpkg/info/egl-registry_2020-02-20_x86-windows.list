@@ -1,0 +1,13 @@
+x86-windows/
+x86-windows/include/
+x86-windows/include/EGL/
+x86-windows/include/EGL/egl.h
+x86-windows/include/EGL/eglext.h
+x86-windows/include/EGL/eglplatform.h
+x86-windows/include/KHR/
+x86-windows/include/KHR/khrplatform.h
+x86-windows/share/
+x86-windows/share/egl-registry/
+x86-windows/share/egl-registry/copyright
+x86-windows/share/egl-registry/egl.xml
+x86-windows/share/egl-registry/vcpkg_abi_info.txt
